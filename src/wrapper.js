@@ -1,7 +1,7 @@
 import cp from 'child_process';
 import rl from 'readline';
 import { GraphQLList } from 'graphql';
-import until from 'async/until';
+import async from 'async';
 
 import serverDataStructure from './dataShapes/server.js';
 
@@ -17,7 +17,7 @@ export default class Wrapper {
     this.serverLines = {};
 
     this._serverData = {};
-    this.playerData = {};
+    this._playerData = [];
 
     this.lookingForServerData = false;
     this.lookingforPlayerData = false;
@@ -60,7 +60,7 @@ export default class Wrapper {
     const parsedData = wordyBits.slice(1).join(':').trim();
 
     if (parsedKey == 'players') {
-      this.playerData = JSON.parse(parsedData);
+      this._playerData = JSON.parse(parsedData);
       console.log('Wrapper: ', parsedData);
       this.lookingForPlayerData = false;
     }
@@ -74,7 +74,7 @@ export default class Wrapper {
 
   startServer() {
     this._serverData = {};
-    this.playerData = {};
+    this._playerData = [];
     this.lookingForServerData = true;
 
     this.serverProcess = cp.spawn('./server.sh', { cwd: this.avorionPath });
@@ -86,7 +86,39 @@ export default class Wrapper {
 
   get serverData() {
     return new Promise((resolve, reject) => {
-      until(!this.lookingForServerData, null, resolve(this._serverData));
+      async.retry({ times: 15, interval: 250 }, (callback) => {
+        if (this.lookingForServerData) {
+          callback(true, null);
+        } else {
+          callback(null, true);
+        }
+      }, (err, results) => {
+        if (results) {
+          resolve(this._serverData);
+        }
+        reject('Timed out waiting for server data');
+      });
+    });
+  }
+
+  get playerData() {
+    this._playerData = [];
+    this.lookingForPlayerData = true;
+    this.serverProcess.stdin.write('/get\n');
+
+    return new Promise((resolve, reject) => {
+      async.retry({ times: 15, interval: 250 }, (callback) => {
+        if (this.lookingForPlayerData) {
+          callback(true, null);
+        } else {
+          callback(null, true);
+        }
+      }, (err, results) => {
+        if (results) {
+          resolve(this._playerData);
+        }
+        reject('Timed out waiting for player data');
+      });
     });
   }
 }
