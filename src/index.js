@@ -1,39 +1,27 @@
 import express from'express';
 import graphqlHTTP from 'express-graphql';
-import { buildSchema } from 'graphql';
+import { GraphQLSchema, GraphQLObjectType } from 'graphql';
+
+import serverDataStructure from './dataShapes/server.js';
 
 import Wrapper from './wrapper.js';
 
 const serverWrapper = new Wrapper('/home/alex/.local/share/Steam/steamapps/common/Avorion');
 serverWrapper.startServer();
 
-let schema = buildSchema(`
-  type Query {
-    serverData: ServerData
-  }
-
-  type ServerData {
-    cpu: String!,
-    name: String!,
-    seed: String!,
-    port: String!,
-    maxOnlinePlayers: String!,
-    saveInterval: String!,
-    broadcastInterval: String!,
-    maxLoadedSectorTime: String!,
-    weakUpdate: String!,
-    workerThreads: String!,
-    difficulty: String!,
-    infiniteResources: String!,
-    collision: String!,
-    accessList: String!,
-    public: String!,
-    authentication: String!,
-    listed: String!,
-    steamNetworking: String!,
-    administrators: String!
-  }
-`);
+let schema = new GraphQLSchema({
+  query: new GraphQLObjectType({
+    name: 'Query',
+    fields: {
+      serverData: {
+        type: new GraphQLObjectType({
+          name: 'ServerData',
+          fields: serverDataStructure,
+        }),
+      },
+    },
+  }),
+});
 
 let root = {
   serverData: () => serverWrapper.serverData,

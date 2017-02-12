@@ -1,7 +1,12 @@
 import cp from 'child_process';
 import rl from 'readline';
+import { GraphQLList } from 'graphql';
 
 import serverDataStructure from './dataShapes/server.js';
+
+const compareObjectProps = (obj1, obj2) => {
+  return Object.keys(obj1).every((prop) => obj2.hasOwnProperty(prop));
+};
 
 export default class Wrapper {
   constructor(path) {
@@ -24,16 +29,25 @@ export default class Wrapper {
   _parseServerInfo(line) {
     const wordyBits = line.split(':');
     const parsedKey = wordyBits[0];
-    const parsedValue = wordyBits.slice(1).join(':').trim();
+    let parsedValue = wordyBits.slice(1).join(':').trim();
+
+    if (parsedValue == 'yes') parsedValue = true;
+    if (parsedValue == 'no') parsedValue = false;
 
     for (const key in serverDataStructure) {
       if (serverDataStructure.hasOwnProperty(key)) {
         const serverKey = serverDataStructure[key].label;
-        if (serverKey == parsedKey) this._serverData[key] = parsedValue;
+        if (serverKey == parsedKey) {
+          if (serverDataStructure[key].type instanceof GraphQLList) {
+            // Avorion lists admins as single-quoted strings separated by spaces
+            parsedValue = parsedValue.split('\'').filter((v, i) => i % 2 != 0);
+          }
+          this._serverData[key] = parsedValue;
+        }
       }
     }
 
-    if (Object.keys(serverDataStructure).every((prop) => this._serverData.hasOwnProperty(prop))) {
+    if (compareObjectProps(serverDataStructure, this._serverData)) {
       this.lookingForServerData = false;
       console.log('Wrapper: ', this._serverData);
     }

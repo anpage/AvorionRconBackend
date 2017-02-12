@@ -79,8 +79,7 @@ export default {
   },
   administrators: {
     label: 'administrators',
-    type: GraphQLList,
-    subType: GraphQLString,
+    type: new GraphQLList(GraphQLString),
   },
   sameStartSector: {
     label: 'same start sector',
