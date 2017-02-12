@@ -1,6 +1,7 @@
 import cp from 'child_process';
 import rl from 'readline';
 import { GraphQLList } from 'graphql';
+import until from 'async/until';
 
 import serverDataStructure from './dataShapes/server.js';
 
@@ -84,6 +85,8 @@ export default class Wrapper {
   }
 
   get serverData() {
-    return this._serverData;
+    return new Promise((resolve, reject) => {
+      until(!this.lookingForServerData, null, resolve(this._serverData));
+    });
   }
 }
