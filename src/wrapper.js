@@ -21,12 +21,12 @@ export default class Wrapper {
     this.lookingForServerData = false;
     this.lookingforPlayerData = false;
 
-    this._parseServerInfo = this._parseServerInfo.bind(this);
+    this._parseServerData = this._parseServerData.bind(this);
     this._parsePlayerData = this._parsePlayerData.bind(this);
     this._onServerLine = this._onServerLine.bind(this);
   }
 
-  _parseServerInfo(line) {
+  _parseServerData(line) {
     const wordyBits = line.split(':');
     const parsedKey = wordyBits[0];
     let parsedValue = wordyBits.slice(1).join(':').trim();
@@ -67,7 +67,7 @@ export default class Wrapper {
 
   _onServerLine(line) {
     console.log('Avorion: ' + line);
-    if (this.lookingForServerData) this._parseServerInfo(line);
+    if (this.lookingForServerData) this._parseServerData(line);
     if (this.lookingForPlayerData) this._parsePlayerData(line);
   }
 
